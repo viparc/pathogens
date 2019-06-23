@@ -1,0 +1,209 @@
+---
+title: "Analysis"
+csl: the-american-naturalist.csl
+output:
+  html_document:
+    theme: cerulean
+    toc: yes
+  pdf_document:
+    toc: yes
+<!-- bibliography: references.bib -->
+editor_options: 
+  chunk_output_type: console
+---
+
+<!--
+IMAGES:
+Insert them with: ![alt text](image.png)
+You can also resize them if needed: convert image.png -resize 50% image.png
+If you want to center the image, go through HTML code:
+<div style="text-align:center"><img src ="image.png"/></div>
+
+REFERENCES:
+For references: Put all the bibTeX references in the file "references.bib"
+in the current folder and cite the references as @key or [@key] in the text.
+Uncomment the bibliography field in the above header and put a "References"
+title wherever you want to display the reference list.
+-->
+
+<style type="text/css">
+.main-container {
+  max-width: 1370px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r general options, include = FALSE}
+knitr::knit_hooks$set(
+  margin = function(before, options, envir) {
+    if (before) par(mgp = c(1.5, .5, 0), bty = "n", plt = c(.105, .97, .13, .97))
+    else NULL
+  },
+  prompt = function(before, options, envir) {
+    options(prompt = if (options$engine %in% c("sh", "bash")) "$ " else "> ")
+  })
+
+knitr::opts_chunk$set(margin = TRUE, prompt = TRUE, comment = "", message = FALSE,
+                      collapse = TRUE, cache = FALSE, autodep = TRUE, warning = FALSE,
+                      dev.args = list(pointsize = 11), fig.height = 3.5,
+                      fig.width = 4.24725, fig.retina = 2, fig.align = "center")
+
+options(width = 137)
+```
+
+## Packages
+
+We need the following packages:
+
+```{r}
+library(magrittr)
+library(dplyr)
+library(purrr)
+library(car)
+library(irr)
+```
+
+## Data
+
+Let's load and clean a bit the data:
+
+```{r}
+data <- "PathogenData130619.csv" %>% 
+  read.csv() %>% 
+  mutate_at(c("Prostration", "Respiratory", "Diarrhea", "CNS", "Joints", "Anemia"), `>`, 0) %>% 
+  mutate_at(vars(ends_with("FINAL")), `>`, 0) %>% 
+  mutate_at(vars(ends_with("y.n")), `>`, 0)
+```
+
+## Colinearities, confounding and summary table
+
+A key issue in multivariate analyses is when the $x$ variables are not independent
+(or colinear), which may cause confounding effects in your analysis, meaning that
+some effect that you detect between $y$ and $x$  may not reflect a true direct
+association between $y$ and $x$ but instead reflects the fact that both $x$ and
+$y$ are associated to a third variable. In such conditions, we thus need to find
+a way to correct for these potential confounding effects due to colinearities.
+One powerful option is the so-called Type-II partial tests (see 
+[here](https://mcfromnz.wordpress.com/2011/03/02/anova-type-iiiiii-ss-explained/)
+for example). The `car` R package has the function `Anova()` that computes Type-II
+partial tests for many classical models, including the logistic regression that
+you want to use here. The function below uses the `car::Anova()` function to
+compute significativity tests and summarises the results a multivariate
+logistic regression in a table that contains estimates of Odds Ratio, their
+confidence interval and their level of significativity, corrected for the 
+potential confounding effect due to the other $x$ variables.
+
+```{r}
+make_table <- function(model) {
+  out <- cbind(exp(cbind(coef(model), confint(model))),
+               rbind(rep(NA, 2), as.data.frame(car::Anova(model))))
+  names(out)[1] <- "Estimate"
+  out
+}
+```
+
+Let's try it on a simple multivariate analysis:
+
+```{r}
+model1 <- glm(AVI.FINAL ~ Prostration + Respiratory + Diarrhea + CNS + Joints + Anemia, binomial, data)
+```
+
+The results of which are:
+
+```{r}
+make_table(model1)
+```
+
+## An exhaustive search
+
+We aim to explain the presence of these 8 pathogens:
+
+```{r}
+(xs <- paste0(c("AVI", "ORT", "PM", "MG", "IBV", "IBD", "FLU", "E.COLI"), ".FINAL"))
+```
+
+Note that we have to drop `ND.FINAL` that is never present in the data set:
+
+```{r}
+tmp <- data %>%
+  select(ends_with("FINAL")) %>% 
+  sapply(table)
+tmp %>%
+  reduce(bind_rows) %>% 
+  as.data.frame() %>% 
+  `rownames<-`(names(tmp))
+```
+
+Below is the list of co-variables that we will consider in order to explain the
+presence of each of the above pathogens:
+
+```{r}
+ys <- c("Prostration", "Respiratory", "Diarrhea", "CNS", "Joints", "Anemia",
+        "Age.weeks.", "Helminth.Y.N", "Nematodes.y.n", "Cestodes.Y.N")
+```
+
+Let's explore the agreements between the boolean variables in `ys` (i.e. all
+except `Age.weeks.`). For that, the following function computes a matrix of
+Cohen's kappa p values:
+
+```{r}
+kappa_mat <- function(df) {
+  nb <- ncol(df)
+  vn <- names(df)
+  expand.grid(1:nb, 1:nb) %>% 
+    t() %>% 
+    as.data.frame() %>% 
+    sapply(function(x) irr::kappa2(data.frame(df[, x[1]], df[, x[2]]))$p) %>% 
+    matrix(nb) %>% 
+    round(2) %>% 
+    as.data.frame(vn) %>% 
+    setNames(vn) %>% 
+    `rownames<-`(vn)
+}
+```
+
+Let's run it:
+
+```{r}
+data %>%
+  select(ys, -Age.weeks.) %>% 
+  kappa_mat()
+```
+
+Anemia appears pretty associated with CNS, and the presence of worms and CNS
+appears associated with the presence of joints pain and cestodes. So, it's not
+all super associated but there are some associations. Let's now look at how these
+variables are associated with age:
+
+```{r}
+data %>%
+  select(ys, -Age.weeks.) %>% 
+  sapply(function(y)anova(glm(y ~ data$Age.weeks., binomial), test = "LRT")$P[2])
+```
+
+Only Diarrhea seems to decrease with age:
+
+```{r}
+summary(glm(Diarrhea ~ Age.weeks., binomial, data))
+```
+
+Let's now run the multivariate logisitc models corrected for confounding effects
+in order to explain the presence of all the pathogens. Because there is not much
+data and there is multiple infections in most of the cases, we'll also include
+the presence of the other pathogens in the co-variables of the multivariable
+logistic regression:
+
+```{r}
+for(i in seq_along(xs)) {
+  print(xs[i])
+  print(make_table(glm(formula(paste(xs[i], "~", paste(c(xs[-i], ys), collapse = " + "))), binomial, data)))
+  cat("------------------------------------------------------------------\n")
+}
+```
+
+It shows that
+
+* the presences of AVI and ORT increase with age,
+* CNS is positively associated to the presence of MG,
+* Prostration is positively associated to the presence of $E. coli$.
