@@ -383,6 +383,7 @@ $(document).ready(function () {
 <li><a href="#data">Data</a></li>
 <li><a href="#colinearities-confounding-and-summary-table">Colinearities, confounding and summary table</a></li>
 <li><a href="#an-exhaustive-search">An exhaustive search</a></li>
+<li><a href="#new-model">New model</a></li>
 </ul>
 </div>
 
@@ -710,6 +711,161 @@ Cestodes.Y.NTRUE  4.534110e-02  9.508181e-05  3.932238e+00 1.68197567  1 0.19466
 <li>CNS is positively associated to the presence of MG,</li>
 <li>Prostration is positively associated to the presence of <span class="math inline">\(E. coli\)</span>.</li>
 </ul>
+<p>Of note: this confounder effect correction is to unraveal “biological” relationships between in order to understand how things works. But that doesn’t have much of practical benefit in a particular situation. If instead you aim at predicting the etiology (or simply the presence of a pathogen), then rerun the above model, without including the pathogens in the <span class="math inline">\(x\)</span> variables:</p>
+<pre class="r"><code>&gt; for(i in seq_along(xs)) {
++   print(xs[i])
++   print(make_table(glm(formula(paste(xs[i], &quot;~&quot;, paste(ys, collapse = &quot; + &quot;))), binomial, data)))
++   cat(&quot;------------------------------------------------------------------\n&quot;)
++ }
+[1] &quot;AVI.FINAL&quot;
+                   Estimate       2.5 %      97.5 %  LR Chisq Df Pr(&gt;Chisq)
+(Intercept)       0.6254003 0.043812735   8.8010135        NA NA         NA
+ProstrationTRUE   0.7257343 0.086700906   5.3002080 0.0999329  1 0.75191017
+RespiratoryTRUE   2.0938104 0.642051658   7.1721057 1.4980228  1 0.22097584
+DiarrheaTRUE      0.6955445 0.158942125   2.8018478 0.2596047  1 0.61039185
+CNSTRUE           0.1379565 0.004290178   1.8547825 2.1761637  1 0.14016346
+JointsTRUE        9.8353965 0.635099782 529.6508648 2.5276037  1 0.11186999
+AnemiaTRUE        0.1298929 0.012037934   0.8844019 4.3727864  1 0.03651723
+Age.weeks.        1.1986870 1.006661956   1.4736918 4.1582021  1 0.04143336
+Helminth.Y.NTRUE  0.8420943 0.219139051   3.1262048        NA  0         NA
+Nematodes.y.nTRUE        NA          NA          NA        NA  0         NA
+Cestodes.Y.NTRUE  4.5113671 0.511276881  68.5631037 1.7710359  1 0.18325393
+------------------------------------------------------------------
+[1] &quot;ORT.FINAL&quot;
+                      Estimate        2.5 %       97.5 %    LR Chisq Df   Pr(&gt;Chisq)
+(Intercept)       3.671823e-04 9.703369e-08 9.774825e-02          NA NA           NA
+ProstrationTRUE   1.341162e-01 2.345440e-03 6.659063e+00  1.11619724  1 0.2907387623
+RespiratoryTRUE   3.478991e+00 2.677423e-01 8.373674e+01  0.87833182  1 0.3486589875
+DiarrheaTRUE      1.885786e+00 2.023433e-01 3.047690e+01  0.28931734  1 0.5906583296
+CNSTRUE           7.599665e-02 5.375567e-04 2.346018e+00  2.04733607  1 0.1524727739
+JointsTRUE        1.601586e+00 4.541568e-02 5.486588e+01  0.07428086  1 0.7852028803
+AnemiaTRUE        2.464279e-01 8.686285e-03 4.092913e+00  0.91134071  1 0.3397589381
+Age.weeks.        1.606373e+00 1.194983e+00 2.450763e+00 11.37603291  1 0.0007439784
+Helminth.Y.NTRUE  4.644652e+00 2.356561e-01 2.711723e+02          NA  0           NA
+Nematodes.y.nTRUE           NA           NA           NA          NA  0           NA
+Cestodes.Y.NTRUE  6.641275e+01 2.894920e+00 5.251781e+03  7.31065861  1 0.0068546799
+------------------------------------------------------------------
+[1] &quot;PM.FINAL&quot;
+                      Estimate        2.5 %       97.5 %   LR Chisq Df Pr(&gt;Chisq)
+(Intercept)       4.835114e-09           NA 6.425899e+72         NA NA         NA
+ProstrationTRUE   9.591958e+06 8.435411e-85           NA 1.09285963  1  0.2958385
+RespiratoryTRUE   5.560054e-01 7.898462e-02 3.236518e+00 0.42797763  1  0.5129830
+DiarrheaTRUE      2.314515e+00 3.430180e-01 2.778294e+01 0.67647007  1  0.4108049
+CNSTRUE           7.647128e-01 2.603029e-02 1.597803e+01 0.02995426  1  0.8625941
+JointsTRUE        2.300501e+00 1.292278e-01 3.630601e+01 0.36000986  1  0.5485008
+AnemiaTRUE        2.725811e+00 2.370855e-01 2.686010e+01 0.70804660  1  0.4000931
+Age.weeks.        1.023063e+00 7.686396e-01 1.311041e+00 0.02955637  1  0.8635007
+Helminth.Y.NTRUE  1.117848e+00 1.169701e-01 1.067194e+01         NA  0         NA
+Nematodes.y.nTRUE           NA           NA           NA         NA  0         NA
+Cestodes.Y.NTRUE  4.805506e+00 4.426796e-01 6.960678e+01 1.67606803  1  0.1954477
+------------------------------------------------------------------
+[1] &quot;MG.FINAL&quot;
+                    Estimate       2.5 %     97.5 %  LR Chisq Df Pr(&gt;Chisq)
+(Intercept)       0.14919318 0.007375739   2.304795        NA NA         NA
+ProstrationTRUE   0.70304787 0.094741785   5.968965 0.1158081  1 0.73362622
+RespiratoryTRUE   1.41790914 0.365864930   5.800285 0.2565196  1 0.61252140
+DiarrheaTRUE      1.22739805 0.273738515   6.200826 0.0696929  1 0.79178445
+CNSTRUE           0.06850305 0.001118038   1.204518 3.2878971  1 0.06979235
+JointsTRUE        6.13540251 0.507309650 167.892899 1.9802559  1 0.15936345
+AnemiaTRUE        1.36048607 0.185918488   9.136227 0.1012481  1 0.75033693
+Age.weeks.        0.95689905 0.784995127   1.144732 0.2234231  1 0.63644401
+Helminth.Y.NTRUE  4.44237432 1.000442934  25.191764        NA  0         NA
+Nematodes.y.nTRUE         NA          NA         NA        NA  0         NA
+Cestodes.Y.NTRUE  1.69730503 0.225343490  13.496321 0.2711258  1 0.60257754
+------------------------------------------------------------------
+[1] &quot;IBV.FINAL&quot;
+                   Estimate       2.5 %    97.5 %   LR Chisq Df Pr(&gt;Chisq)
+(Intercept)       0.1449621 0.005497502  2.966725         NA NA         NA
+ProstrationTRUE   0.2925335 0.037624785  2.087117 1.52857089  1 0.21632706
+RespiratoryTRUE   3.8806398 0.859956130 22.622692 3.08687121  1 0.07892643
+DiarrheaTRUE      1.9903256 0.387444520 13.502983 0.64265537  1 0.42275088
+CNSTRUE           0.7354356 0.026851916 10.012266 0.04954470  1 0.82385743
+JointsTRUE        0.2459319 0.008321399  3.322265 1.05977916  1 0.30326556
+AnemiaTRUE        0.8159679 0.082389320  6.802606 0.03572886  1 0.85007652
+Age.weeks.        0.9259039 0.736952360  1.133039 0.53394163  1 0.46495441
+Helminth.Y.NTRUE  5.2782902 1.093815239 33.114406         NA  0         NA
+Nematodes.y.nTRUE        NA          NA        NA         NA  0         NA
+Cestodes.Y.NTRUE  0.6893780 0.065214901  5.707652 0.11527485  1 0.73421690
+------------------------------------------------------------------
+[1] &quot;IBD.FINAL&quot;
+                   Estimate      2.5 %    97.5 %   LR Chisq Df Pr(&gt;Chisq)
+(Intercept)       0.9454030 0.02524097 21.360133         NA NA         NA
+ProstrationTRUE   1.7830503 0.17238287 44.623240 0.20864765  1  0.6478294
+RespiratoryTRUE   0.4034798 0.09837363  1.507912 1.81255950  1  0.1782015
+DiarrheaTRUE      1.3764174 0.29729354  7.744846 0.16014225  1  0.6890256
+CNSTRUE           0.8514412 0.03000908 12.946388 0.01277492  1  0.9100098
+JointsTRUE        1.2353753 0.05051543 13.937569 0.02538432  1  0.8734132
+AnemiaTRUE        0.5509003 0.02267103  5.238017 0.23254629  1  0.6296422
+Age.weeks.        0.8604061 0.68394217  1.043768 2.25575771  1  0.1331183
+Helminth.Y.NTRUE  0.4565090 0.09711881  1.894312         NA  0         NA
+Nematodes.y.nTRUE        NA         NA        NA         NA  0         NA
+Cestodes.Y.NTRUE  2.0226795 0.17641087 20.703550 0.35424862  1  0.5517179
+------------------------------------------------------------------
+[1] &quot;FLU.FINAL&quot;
+                      Estimate         2.5 %        97.5 %     LR Chisq Df Pr(&gt;Chisq)
+(Intercept)       3.796834e-20  0.000000e+00  0.000000e+00           NA NA         NA
+ProstrationTRUE   2.758315e+06  0.000000e+00           Inf 5.017197e-03  1 0.94353132
+RespiratoryTRUE   1.171673e-10 6.632153e-255 3.516521e+225 4.207015e+00  1 0.04025712
+DiarrheaTRUE      1.766541e+00  1.953656e-04  5.151652e+06 1.660425e-02  1 0.89747041
+CNSTRUE           2.563083e-10  0.000000e+00           Inf 1.470024e-11  1 0.99999694
+JointsTRUE        5.886062e-01  0.000000e+00           Inf 7.514700e-11  1 0.99999308
+AnemiaTRUE        7.201134e-10  0.000000e+00           Inf 1.262466e-10  1 0.99999104
+Age.weeks.        2.733158e+00  1.073585e+00  5.043833e+01 5.028613e+00  1 0.02493186
+Helminth.Y.NTRUE  2.486032e+08           Inf           Inf           NA  0         NA
+Nematodes.y.nTRUE           NA            NA            NA           NA  0         NA
+Cestodes.Y.NTRUE  1.823710e-01  0.000000e+00           Inf 1.153628e-10  1 0.99999143
+------------------------------------------------------------------
+[1] &quot;E.COLI.FINAL&quot;
+                      Estimate         2.5 %        97.5 %   LR Chisq Df Pr(&gt;Chisq)
+(Intercept)       2.302718e-09            NA 1.456324e+100         NA NA         NA
+ProstrationTRUE   8.545651e+07 7.179660e-112            NA 2.83430826  1 0.09227053
+RespiratoryTRUE   7.475316e-01  1.415100e-01  3.678613e+00 0.12962337  1 0.71882286
+DiarrheaTRUE      6.955886e-01  1.180898e-01  5.093507e+00 0.14921681  1 0.69928493
+CNSTRUE           8.311884e-09            NA 1.655843e+173 2.37501884  1 0.12329011
+JointsTRUE        5.764171e+00  1.521996e-01  2.425676e+02 1.02529027  1 0.31126742
+AnemiaTRUE        2.486534e-08            NA 1.263225e+137 2.17695462  1 0.14009143
+Age.weeks.        1.046550e+00  8.609505e-01  1.284642e+00 0.21395993  1 0.64368120
+Helminth.Y.NTRUE  2.075306e+00  4.102579e-01  1.122597e+01         NA  0         NA
+Nematodes.y.nTRUE           NA            NA            NA         NA  0         NA
+Cestodes.Y.NTRUE  6.391344e-01  1.338542e-02  1.335479e+01 0.07629837  1 0.78237787
+------------------------------------------------------------------</code></pre>
+</div>
+<div id="new-model" class="section level2">
+<h2>New model</h2>
+<p>New data:</p>
+<pre class="r"><code>&gt; data2 &lt;- &quot;summary data.csv&quot; %&gt;% 
++   read.csv() %&gt;% 
++   mutate_at(vars(ends_with(&quot;FINAL&quot;)), `&gt;`, 0)</code></pre>
+<pre class="r"><code>&gt; mod1 &lt;- glm(ORT.FINAL ~ Age.weeks. + Nochicks + Proportion.of.morbidity..per.100. + Cumulative.mortality + Days.onset + Ratio.of.weight.standard.weight, binomial, data2)
+&gt; make_table(mod1)
+                                   Estimate        2.5 %     97.5 %   LR Chisq Df  Pr(&gt;Chisq)
+(Intercept)                       0.0164595 0.0003619115  0.3027945         NA NA          NA
+Age.weeks.                        1.3365713 1.0758749441  1.7659714 7.18162939  1 0.007365379
+Nochicks                          1.0010213 0.9967414177  1.0049971 0.25259937  1 0.615250702
+Proportion.of.morbidity..per.100. 0.9934367 0.9612179666  1.0183568 0.23826018  1 0.625465535
+Cumulative.mortality              0.9867229 0.9393800547  1.0309735 0.37328004  1 0.541221774
+Days.onset                        1.0236007 0.8266677913  1.2129008 0.06079338  1 0.805246334
+Ratio.of.weight.standard.weight   0.5956785 0.0177460076 13.3039236 0.10259247  1 0.748740472</code></pre>
+<pre class="r"><code>&gt; mod2 &lt;- glm(ORT.FINAL ~ log(Age.weeks.) + log(Nochicks) + log(Proportion.of.morbidity..per.100.) + log(Cumulative.mortality + 1) + log(Days.onset) + log(Ratio.of.weight.standard.weight), binomial, data2)
+&gt; make_table(mod2)
+                                           Estimate        2.5 %      97.5 %    LR Chisq Df Pr(&gt;Chisq)
+(Intercept)                            3.135521e-05 6.898546e-10   0.1695293          NA NA         NA
+log(Age.weeks.)                        1.327212e+01 1.638895e+00 267.5473711 6.412729069  1 0.01133051
+log(Nochicks)                          1.661085e+00 5.084828e-01   5.9705851 0.714199946  1 0.39805305
+log(Proportion.of.morbidity..per.100.) 9.189103e-01 3.394429e-01   2.1502325 0.035826922  1 0.84987336
+log(Cumulative.mortality + 1)          7.237723e-01 2.583806e-01   1.9388523 0.429253154  1 0.51235564
+log(Days.onset)                        2.012840e+00 5.208625e-01   8.4893476 1.048924164  1 0.30575499
+log(Ratio.of.weight.standard.weight)   9.404006e-01 1.116162e-01   9.3680561 0.003110314  1 0.95552488</code></pre>
+<pre class="r"><code>&gt; mod3 &lt;- glm(ORT.FINAL ~ Age.weeks. + log(Nochicks) + Proportion.of.morbidity..per.100. + log(Cumulative.mortality + 1) + log(Days.onset) + Ratio.of.weight.standard.weight, binomial, data2)
+&gt; make_table(mod3)
+                                      Estimate        2.5 %     97.5 %   LR Chisq Df Pr(&gt;Chisq)
+(Intercept)                       0.0009240876 2.961755e-07  0.7824741         NA NA         NA
+Age.weeks.                        1.3038823246 1.052157e+00  1.7069869 6.05023280  1 0.01390446
+log(Nochicks)                     1.6929520006 5.535978e-01  5.9786800 0.83723094  1 0.36018992
+Proportion.of.morbidity..per.100. 0.9968997681 9.644614e-01  1.0240576 0.04606026  1 0.83006630
+log(Cumulative.mortality + 1)     0.6790696188 2.461037e-01  1.7295120 0.66128655  1 0.41610611
+log(Days.onset)                   1.9125604885 4.835042e-01  8.0018894 0.88525407  1 0.34676666
+Ratio.of.weight.standard.weight   0.6587002747 1.836905e-02 16.0707029 0.06369533  1 0.80074787</code></pre>
 </div>
 
 

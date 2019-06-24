@@ -207,3 +207,44 @@ It shows that
 * the presences of AVI and ORT increase with age,
 * CNS is positively associated to the presence of MG,
 * Prostration is positively associated to the presence of $E. coli$.
+
+Of note: this confounder effect correction is to unraveal "biological"
+relationships between in order to understand how things works. But that doesn't
+have much of practical benefit in a particular situation. If instead you aim at
+predicting the etiology (or simply the presence of a pathogen), then rerun the
+above model, without including the pathogens in the $x$ variables:
+
+```{r}
+for(i in seq_along(xs)) {
+  print(xs[i])
+  print(make_table(glm(formula(paste(xs[i], "~", paste(ys, collapse = " + "))), binomial, data)))
+  cat("------------------------------------------------------------------\n")
+}
+```
+
+## New model
+
+New data:
+
+```{r}
+data2 <- "summary data.csv" %>% 
+  read.csv() %>% 
+  mutate_at(vars(ends_with("FINAL")), `>`, 0)
+```
+
+```{r}
+mod1 <- glm(ORT.FINAL ~ Age.weeks. + Nochicks + Proportion.of.morbidity..per.100. + Cumulative.mortality + Days.onset + Ratio.of.weight.standard.weight, binomial, data2)
+make_table(mod1)
+```
+
+```{r}
+mod2 <- glm(ORT.FINAL ~ log(Age.weeks.) + log(Nochicks) + log(Proportion.of.morbidity..per.100.) + log(Cumulative.mortality + 1) + log(Days.onset) + log(Ratio.of.weight.standard.weight), binomial, data2)
+make_table(mod2)
+```
+
+```{r}
+mod3 <- glm(ORT.FINAL ~ Age.weeks. + log(Nochicks) + Proportion.of.morbidity..per.100. + log(Cumulative.mortality + 1) + log(Days.onset) + Ratio.of.weight.standard.weight, binomial, data2)
+make_table(mod3)
+```
+
+
