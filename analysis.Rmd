@@ -224,27 +224,97 @@ for(i in seq_along(xs)) {
 
 ## New model
 
-New data:
+### New data
 
 ```{r}
+symptoms <- c("RESPIRATORY.SIGNS", "DIARRHOEA", "JOINT.FOOT.PROBLEMS", "ABNORMAL.EGGS",
+              "NERVOUS.SIGNS", "ANAEMIA", "REDUCTION.IN.FEED.CONSUMPTION....")
 data2 <- "summary data.csv" %>% 
   read.csv() %>% 
-  mutate_at(vars(ends_with("FINAL")), `>`, 0)
+  mutate_at(symptoms, `>`, 0) %>% 
+  mutate_at(vars(contains("FINAL")), `>`, 0) %>%
+  mutate(Helminth.Y.N = Helminth.Y.N == "Yes") %>% 
+  mutate_at(vars(ends_with("y.n")), `>`, 0)
 ```
 
-```{r}
-mod1 <- glm(ORT.FINAL ~ Age.weeks. + Nochicks + Proportion.of.morbidity..per.100. + Cumulative.mortality + Days.onset + Ratio.of.weight.standard.weight, binomial, data2)
-make_table(mod1)
-```
+### Some models without symptoms and parasites
 
 ```{r}
-mod2 <- glm(ORT.FINAL ~ log(Age.weeks.) + log(Nochicks) + log(Proportion.of.morbidity..per.100.) + log(Cumulative.mortality + 1) + log(Days.onset) + log(Ratio.of.weight.standard.weight), binomial, data2)
-make_table(mod2)
+xs <- grep("FINAL", names(data2), value = TRUE) %>% 
+  grep("ND", ., invert = TRUE, value = TRUE) %>% 
+  grep("FLU", ., invert = TRUE, value = TRUE)
 ```
 
+No log transformation:
+
 ```{r}
-mod3 <- glm(ORT.FINAL ~ Age.weeks. + log(Nochicks) + Proportion.of.morbidity..per.100. + log(Cumulative.mortality + 1) + log(Days.onset) + Ratio.of.weight.standard.weight, binomial, data2)
-make_table(mod3)
+ys <- c("Age.weeks.", "Nochicks", "Proportion.of.morbidity..per.100.", "Cumulative.mortality", "Days.onset", "Ratio.of.weight.standard.weight")
+for(i in seq_along(xs)) {
+  print(xs[i])
+  print(make_table(glm(formula(paste(xs[i], "~", paste(ys, collapse = " + "))), binomial, data2)))
+  cat("------------------------------------------------------------------\n")
+}
+```
+
+With log transformations:
+
+```{r}
+yslog <- ys %>%
+  paste0("log(", ., ")") %>%
+  sub("mortality)$", "mortality + 1)", .)
+for(i in seq_along(xs)) {
+  print(xs[i])
+  print(make_table(glm(formula(paste(xs[i], "~", paste(yslog, collapse = " + "))), binomial, data2)))
+  cat("------------------------------------------------------------------\n")
+}
+```
+
+With some log transformations:
+
+```{r}
+sel <- c(1, 3, 6)
+for(i in seq_along(xs)) {
+  print(xs[i])
+  print(make_table(glm(formula(paste(xs[i], "~", paste(c(ys[sel], yslog[-sel]), collapse = " + "))), binomial, data2)))
+  cat("------------------------------------------------------------------\n")
+}
+```
+
+### Same models with symptoms and parasites
+
+```{r}
+additional_variables <- c(grep("y.n", names(data2), TRUE, value = TRUE), symptoms)
+```
+
+No log transformation:
+
+```{r}
+for(i in seq_along(xs)) {
+  print(xs[i])
+  print(make_table(glm(formula(paste(xs[i], "~", paste(c(ys, additional_variables), collapse = " + "))), binomial, data2)))
+  cat("------------------------------------------------------------------\n")
+}
+```
+
+With log transformations:
+
+```{r}
+for(i in seq_along(xs)) {
+  print(xs[i])
+  print(make_table(glm(formula(paste(xs[i], "~", paste(c(yslog, additional_variables), collapse = " + "))), binomial, data2)))
+  cat("------------------------------------------------------------------\n")
+}
+```
+
+With some log transformations:
+
+```{r}
+sel <- c(1, 3, 6)
+for(i in seq_along(xs)) {
+  print(xs[i])
+  print(make_table(glm(formula(paste(xs[i], "~", paste(c(ys[sel], yslog[-sel], additional_variables), collapse = " + "))), binomial, data2)))
+  cat("------------------------------------------------------------------\n")
+}
 ```
 
 
