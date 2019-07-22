@@ -1,0 +1,149 @@
+---
+title: "Analysis"
+csl: the-american-naturalist.csl
+output:
+  html_document:
+    theme: cerulean
+    toc: yes
+  pdf_document:
+    toc: yes
+<!-- bibliography: references.bib -->
+editor_options: 
+  chunk_output_type: console
+---
+
+<!--
+IMAGES:
+Insert them with: ![alt text](image.png)
+You can also resize them if needed: convert image.png -resize 50% image.png
+If you want to center the image, go through HTML code:
+<div style="text-align:center"><img src ="image.png"/></div>
+
+REFERENCES:
+For references: Put all the bibTeX references in the file "references.bib"
+in the current folder and cite the references as @key or [@key] in the text.
+Uncomment the bibliography field in the above header and put a "References"
+title wherever you want to display the reference list.
+-->
+
+<style type="text/css">
+.main-container {
+  max-width: 1370px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r general options, include = FALSE}
+knitr::knit_hooks$set(
+  margin = function(before, options, envir) {
+    if (before) par(mgp = c(1.5, .5, 0), bty = "n", plt = c(.105, .97, .13, .97))
+    else NULL
+  },
+  prompt = function(before, options, envir) {
+    options(prompt = if (options$engine %in% c("sh", "bash")) "$ " else "> ")
+  })
+
+knitr::opts_chunk$set(margin = TRUE, prompt = TRUE, comment = "", message = FALSE,
+                      collapse = TRUE, cache = FALSE, autodep = TRUE, warning = FALSE,
+                      dev.args = list(pointsize = 11), fig.height = 3.5,
+                      fig.width = 4.24725, fig.retina = 2, fig.align = "center")
+
+options(width = 137)
+```
+
+<!--
+model 1: risk factor for infections univariate
+Size of farm
+age
+helminth
+experience of farmer
+ratio
+
+model 2: prediction
+prediction of the etiology based on symptoms
+resp, diarrhea, cns, anemia, foot lesions : 5 symptoms
+also 3 variables: time since onset, mortality, morbidity
+
+Hi Marc,
+As we discussed, I would like to send you data for Modelling.
+It includes 2 sheets with variables of 2 models:
+1.       Risk factor Analysis(6 variables):
+a.       Age
+b.      Size of flock
+c.       Other chicken flock
+d.      Farmer experience (years)
+e.      Ratio weight/ normal weight
+f.        Helminth (Yes/No)
+2.       Patterns to predict disease (8 variables):
+a.       Respiratory
+b.      Diarrhea
+c.       Anemia
+d.      CNS
+e.      Joint/Foot problems
+f.        Mortality
+g.       Morbidity
+h.      Days since onset
+Let me know if anything is not too clear. Thanks a lot for your support!
+Best regards,
+Vân
+-->
+
+## Packages
+
+```{r}
+library(dplyr)
+```
+
+## Risk factor analysis
+
+Reading the first tab of the excel file and putting in shape:
+
+```{r}
+rfa <- readxl::read_excel("DataforMarc.xlsx", "Risk Factors analysis") %>% 
+  mutate_at(vars(OthChickFlock, `Helminth Y/N`, ends_with("FINAL")), ~ . > 0) %>% 
+  select(-Farmcode)
+```
+
+Let's perform nivariable analyses with logistic regressions. It's important to
+note that these models are only for prediction, in the specific context of the
+chicken farms of this study, not for explanation. The following function
+returns the effect of variable`x` on variable `y`
+
+```{r}
+x_effect <- function(x, y) {
+  paste0("`", y, "`~`", x, "`") %>% 
+    formula() %>% 
+    glm(binomial, rfa) %>% 
+    summary() %>% 
+    coef() %>% 
+    data.frame() %>% 
+    `[`(-1, ) %>% 
+    data.frame("risk_factor" = rownames(.), ., stringsAsFactors = FALSE)
+}
+```
+
+Let's use this function for all `x` and `y` variables:
+
+```{r}
+for (y in grep("FINAL", names(rfa), value = TRUE)) {
+  print(y)
+  print(bind_rows(lapply(grep("FINAL", names(rfa), value = TRUE, invert = TRUE), x_effect, y)))
+}
+```
+
+Interpretation:
+
+* the risks of AVI, ORT and FLU infection increase with age;
+* the presence of helminths decreases the risk of GUM;
+
+Note however that if we had to correct for multiple tests (54), a
+significativity threshold of 0.05 would become 0.00093 and none of these tests
+would be significant.
+
+```{r include = F, eval = F}
+efs <- readxl::read_excel("DataforMarc.xlsx", "Patterns to predict disease") %>% 
+  select(-Farmcode) %>% 
+  mutate_at(vars(-matches("^Cu|^Pr")), ~ . > 0)
+```
+
